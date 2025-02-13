@@ -25,18 +25,36 @@ export default function TestPage() {
     try {
       setLoading(true);
       setError("");
-      const url = await supabase.storage
+
+      // ファイル名をユニークにする
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${Math.random()}.${fileExt}`;
+      const filePath = `test/${fileName}`;
+
+      console.log("Uploading file:", filePath); // アップロード開始ログ
+
+      const { error: uploadError, data: uploadData } = await supabase.storage
         .from("problem_images")
-        .upload(`test/${file.name}`, file);
+        .upload(filePath, file);
 
-      if (url.error) throw url.error;
+      if (uploadError) {
+        console.error("Upload error:", uploadError); // アップロードエラーログ
+        throw uploadError;
+      }
 
-      const { data } = supabase.storage
+      console.log("Upload success:", uploadData); // アップロード成功ログ
+
+      // アップロード成功後、公開URLを取得
+      const { data: urlData } = supabase.storage
         .from("problem_images")
-        .getPublicUrl(`test/${file.name}`);
+        .getPublicUrl(filePath);
 
-      setImageUrl(data.publicUrl);
+      console.log("URL data:", urlData); // URL取得データログ
+      console.log("Public URL:", urlData.publicUrl); // 最終的なURL
+
+      setImageUrl(urlData.publicUrl);
     } catch (err) {
+      console.error("Full error:", err); // 詳細なエラーログ
       setError(err instanceof Error ? err.message : "エラーが発生しました");
     } finally {
       setLoading(false);
